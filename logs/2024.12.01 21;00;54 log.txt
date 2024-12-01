@@ -1,0 +1,15 @@
+test_file_not_exist (__main__.TestImportMIDI.test_file_not_exist)
+Test if the input is a file that doesn't exist/isn't a file ... ok
+test_invalid_file (__main__.TestImportMIDI.test_invalid_file)
+Test if the file inputted doesn't have the .midi file extension ... ok
+test_midifile1 (__main__.TestImportMIDI.test_midifile1)
+Test if the contents of midi_file1.mid is correct ... ok
+test_midifile2 (__main__.TestImportMIDI.test_midifile2)
+Test if the contents of midi_file2.mid is correct ... ok
+test_no_file (__main__.TestImportMIDI.test_no_file)
+Test if no file was inputted ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.004s
+
+OK
