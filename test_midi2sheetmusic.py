@@ -39,13 +39,23 @@ class TestImportMIDI(unittest.TestCase):
         self.assertEqual(import_MIDI("txt_test.txt"), "Error: File entered is not a midi file")
 
 if __name__ == "__main__":
-    #Creates a logs directory to store the log files if it doesn't exist already
-    if not os.path.exists("logs"):
-        os.makedirs("logs")
-    log_filepath = f"logs/{strftime('%Y.%m.%d %H;%M;%S', gmtime())} log.txt"
-    #Write output of unittest.main() to a log file
-    with open(log_filepath, "w") as log_file:
-        runner = unittest.TextTestRunner(stream=log_file, verbosity=2)
-        unittest.main(testRunner=runner, exit=False)
     #Print output of unittest.main()
-    unittest.main(verbosity=2)
+    unittest.main(verbosity=2, exit=False)
+    while True:
+        #Ask user if they would like to save the result of the test
+        save = input("Save test (y/n)? ").lower()
+        if save == "y" or save == "yes":
+            #Creates a logs directory to store the log files if it doesn't exist already
+            if not os.path.exists("logs"):
+                os.makedirs("logs")
+            log_filepath = f"logs/{strftime('%Y.%m.%d %H;%M;%S', gmtime())} log.txt"
+            #Write output of unittest.main() to a log file
+            with open(log_filepath, "w") as log_file:
+                runner = unittest.TextTestRunner(stream=log_file, verbosity=2)
+                unittest.main(testRunner=runner, exit=False)
+            break
+        elif save == "n" or save == "no":
+            break
+        else:
+            print("I didn't understand")
+            continue
