@@ -4,7 +4,7 @@ import unittest
 from time import strftime, gmtime
 
 #Import main program
-from midi2sheetmusic import import_MIDI
+from midi2sheetmusic import *
 
 #Setup unittests
 class TestImportMIDI(unittest.TestCase):
@@ -37,6 +37,16 @@ class TestImportMIDI(unittest.TestCase):
     def test_invalid_file(self):
         """Test if the file inputted doesn't have the .midi file extension"""
         self.assertEqual(import_MIDI("txt_test.txt"), "Error: File entered is not a midi file")
+
+class TestClassStructure(unittest.TestCase):
+    def test_MIDI_Metadata(self):
+        pass
+
+    def test_Track_Metadata(self):
+        pass
+
+    def test_Events(self):
+        pass
 
 if __name__ == "__main__":
     #Print output of unittest.main()
