@@ -3,11 +3,19 @@ import os
 
 class MIDI_Metadata:
     def __init__(self, midi_header: bytes, midi_header_length: bytes, midi_format: bytes, num_tracks: bytes, time_division: bytes):
-        self.midi_header = midi_header
-        self.midi_header_length = midi_header_length
-        self.midi_format = midi_format
-        self.num_tracks = num_tracks
-        self.time_division = time_division
+        self.midi_header = self.midi_header_length = self.midi_format = self.num_tracks = self.time_division = None
+        if len(midi_header) == 4:
+            self.midi_header = midi_header
+        if len(midi_header_length) == 4:
+            self.midi_header_length = midi_header_length
+        if len(midi_format) == 2:
+            self.midi_format = midi_format
+        if len(num_tracks) == 2:
+            self.num_tracks = num_tracks
+        if len(time_division) == 2:
+            self.time_division = time_division
+        if not (self.midi_header and self.midi_header_length and self.midi_format and self.num_tracks and self.time_division):
+            raise StructureException("Invaild Input")
 
     def getMIDIHeader(self):
         return self.midi_header
@@ -26,8 +34,13 @@ class MIDI_Metadata:
 
 class Track_Metadata:
     def __init__(self, track_header: bytes, track_header_length: bytes):
-        self.track_header = track_header
-        self.track_header_length = track_header_length
+        self.track_header = self.track_header_length = None
+        if len(track_header) == 4:
+            self.track_header = track_header
+        if len(track_header_length) == 4:
+            self.track_header_length = track_header_length
+        if not (self.track_header and self.track_header_length):
+            raise StructureException("Invaild Input")
     
     def getTrackHeader(self):
         return self.track_header
@@ -45,6 +58,10 @@ class Events:
     
     def getEvent(self):
         return self.event
+
+class StructureException(Exception):
+    def __init__(self, message):
+        super().__init__(message)
 
 #Reads an inputted midi file
 def import_MIDI(filename):
