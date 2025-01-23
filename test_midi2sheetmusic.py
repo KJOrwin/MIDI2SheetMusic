@@ -5,6 +5,7 @@ from time import strftime, gmtime
 
 #Import main program
 from midi2sheetmusic import *
+from tests import *
 
 #Setup unittests
 class TestImportMIDI(unittest.TestCase):
@@ -77,29 +78,9 @@ class TestClassStructure(unittest.TestCase):
     def test_Events(self):
         pass
 
-def TestImportMIDI_suite():
-    TestImportMIDI_tests = [
-        TestImportMIDI("test_midifile1"),
-        TestImportMIDI("test_midifile2"),
-        TestImportMIDI("test_no_file"),
-        TestImportMIDI("test_file_not_exist"),
-        TestImportMIDI("test_invalid_file")
-    ]
-    return unittest.TestSuite(tests=TestImportMIDI_tests)
-
-def TestClassStructure_suite():
-    TestClassStructure_tests = [
-        TestClassStructure("test_MIDI_Metadata"),
-        TestClassStructure("test_MIDI_Metadata_Exception"),
-        TestClassStructure("test_Track_Metadata"),
-        TestClassStructure("test_Track_Metadata_Exception"),
-        TestClassStructure("test_Events"),
-    ]
-    return unittest.TestSuite(tests=TestClassStructure_tests)
-
 if __name__ == "__main__":
     #Print output of unittest.main()
-    unittest.main(module="__main__", verbosity=2, exit=False)
+    unittest.main(verbosity=2, exit=False)
     while True:
         #Ask user if they would like to save the result of the test
         save = input("Save test (y/n)? ").lower()

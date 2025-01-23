@@ -1,0 +1,2 @@
+import test_TestClassStructure
+import test_TestImportMIDI
