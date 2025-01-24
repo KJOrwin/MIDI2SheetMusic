@@ -48,7 +48,7 @@ class Track_Metadata:
     def getTrackHeaderLength(self):
         return self.track_header_length
     
-class Events:
+class Event:
     def __init__(self, delta_time: bytes, event: bytes):
         self.delta_time = delta_time
         self.event = event
@@ -80,3 +80,21 @@ if __name__ == "__main__":
     #Store inputted midi file
     input_file = input("Enter the midi file name: ")
     midifile = import_MIDI(input_file)
+    mmetadata = MIDI_Metadata(midifile[0:4], midifile[4:8], midifile[8:10], midifile[10:12], midifile[12:14])
+    tmetadata = Track_Metadata(midifile[14:18], midifile[18:22])
+    event_list = []
+    startpos = 22
+    endpos = 23
+    while True:
+        if format(midifile[22], "08b").startswith("0"):
+            temp_deltatime = midifile[startpos:endpos]
+        elif format(midifile[22], "08b").startswith("1"):
+            endpos += 1
+        startpos = endpos
+        event_list.append(Event(temp_deltatime, midifile[startpos:startpos+3]))
+        startpos += 3
+        endpos = startpos + 1
+        if not midifile[startpos:startpos+8]:
+            break
+    for element in event_list:
+        print(f"{list(element.getDeltaTime())}\t{list(element.getEvent())}")
