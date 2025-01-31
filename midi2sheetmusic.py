@@ -49,15 +49,19 @@ class Track_Metadata:
         return self.track_header_length
     
 class Event:
-    def __init__(self, delta_time: bytes, event: bytes):
+    def __init__(self, delta_time: bytes, event: bytes, data: bytes):
         self.delta_time = delta_time
         self.event = event
+        self.data = data
     
     def getDeltaTime(self):
         return self.delta_time
     
     def getEvent(self):
         return self.event
+    
+    def getData(self):
+        return self.data
 
 class StructureException(Exception):
     def __init__(self, message):
@@ -86,15 +90,23 @@ if __name__ == "__main__":
     startpos = 22
     endpos = 23
     while True:
-        if format(midifile[22], "08b").startswith("0"):
-            temp_deltatime = midifile[startpos:endpos]
-        elif format(midifile[22], "08b").startswith("1"):
-            endpos += 1
+        while True:
+            if format(midifile[endpos - 1], "08b").startswith("0"):
+                temp_deltatime = midifile[startpos:endpos]
+                break
+            elif format(midifile[endpos - 1], "08b").startswith("1"):
+                endpos += 1
         startpos = endpos
-        event_list.append(Event(temp_deltatime, midifile[startpos:startpos+3]))
-        startpos += 3
-        endpos = startpos + 1
-        if not midifile[startpos:startpos+8]:
+        endpos += 1
+        if bytes(midifile[startpos:startpos+4]) == b'\x00\xff/\x00':
             break
-    for element in event_list:
-        print(f"{list(element.getDeltaTime())}\t{list(element.getEvent())}")
+    print("done")
+    
+
+    #     event_list.append(Event(temp_deltatime, midifile[startpos:startpos+3], None))
+    #     startpos += 3
+    #     endpos = startpos + 1
+    #     if midifile[startpos:startpos+4] == b'\x00\xff/\x00':
+    #         break
+    # for element in event_list:
+    #     print(f"{list(element.getDeltaTime())}\t{list(element.getEvent())}")
