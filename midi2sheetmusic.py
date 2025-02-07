@@ -1,5 +1,6 @@
 #Import external libraries
 import os
+import sys
 
 class MIDI_Metadata:
     def __init__(self, midi_header: bytes, midi_header_length: bytes, midi_format: bytes, num_tracks: bytes, time_division: bytes):
@@ -90,6 +91,8 @@ if __name__ == "__main__":
     startpos = 22
     endpos = 23
     while True:
+        #Calulating deltatime
+        #If the first bit of the final byte is zero then it is the final byte in deltatime, if not continue
         while True:
             if format(midifile[endpos - 1], "08b").startswith("0"):
                 temp_deltatime = midifile[startpos:endpos]
@@ -98,15 +101,28 @@ if __name__ == "__main__":
                 endpos += 1
         startpos = endpos
         endpos += 1
-        if bytes(midifile[startpos:startpos+4]) == b'\x00\xff/\x00':
+        #Check if at the end of file
+        if bytes(midifile[startpos:startpos+3]) == b'\xff/\x00':
             break
-    print("done")
+        #Calculate length of event
+        #If the event starts with byte FF then the event will have data
+        if format(midifile[startpos], "08b") == "11111111":
+            temp_event = midifile[startpos:startpos+3]
+            startpos += 2
+            temp_data = midifile[startpos:startpos+midifile[startpos]]
+            event_list.append(Event(temp_deltatime, temp_event, temp_data))
+            startpos += midifile[startpos]
+        #If the event starts with byte Cn or Dn then the event will always be 2 bytes long
+        elif format(midifile[startpos], "08b").startswith("1100") or format(midifile[startpos], "08b").startswith("1101"):
+            event_list.append(Event(temp_deltatime, midifile[startpos:startpos+2], None))
+            startpos += 2
+        #Otherwise do the event will always be 3 bytes long
+        else:
+            event_list.append(Event(temp_deltatime, midifile[startpos:startpos+3], None))
+            startpos += 3
+        endpos = startpos + 1
+    print(event_list)
     
 
-    #     event_list.append(Event(temp_deltatime, midifile[startpos:startpos+3], None))
-    #     startpos += 3
-    #     endpos = startpos + 1
-    #     if midifile[startpos:startpos+4] == b'\x00\xff/\x00':
-    #         break
     # for element in event_list:
     #     print(f"{list(element.getDeltaTime())}\t{list(element.getEvent())}")
