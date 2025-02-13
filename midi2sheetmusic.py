@@ -79,7 +79,7 @@ def import_MIDI(filename):
         return "Error: No file was entered"
     elif not os.path.exists(os.path.abspath(filename)):
         return "Error: File entered does not exist"
-    elif not filename.endswith(".mid"):
+    elif not filename.endswith((".mid", ".midi")):
         return "Error: File entered is not a midi file"
     #Read inputted midi file
     with open(filename, "rb") as file:
@@ -93,6 +93,7 @@ if __name__ == "__main__":
     startpos = 14
     endpos = 15
     tracks = []
+    #SYSTEM EXCULSIVE EVENTS AND SOME META EVENTS ARE NOT ACCOUNTED FOR
     for i in range(int.from_bytes(mmetadata.getNumTracks())):
         temp_track_header = midifile[startpos:startpos+4]
         temp_track_header_length = midifile[startpos+4:startpos+8]
@@ -118,25 +119,21 @@ if __name__ == "__main__":
                 break
             #Calculate length of event
             #If the event starts with byte FF then the event will have data
-            # for e in ["1000", "1001", "1010", "1011", "1100", "1101", "1110", "1111", "11111111"]:
-            #     if not format(midifile[startpos], "08b").startswith(e):
-            #         if e == "11111111":
-            #             print(temp_deltatime, midifile[startpos:startpos+8])
-            #             print("no")
             if format(midifile[startpos], "08b") == "11111111":
                 temp_event = midifile[startpos:startpos+3]
                 startpos += 3
                 temp_data = midifile[startpos:startpos+midifile[startpos-1]]
                 temp_events.append(Event(temp_deltatime, temp_event, temp_data))
                 startpos += midifile[startpos-1]
-            #If the event starts with byte Cn or Dn then the event will always be 2 bytes long
-            elif format(midifile[startpos], "08b").startswith("1100") or format(midifile[startpos], "08b").startswith("1101"):
-                temp_events.append(Event(temp_deltatime, midifile[startpos:startpos+2], None))
-                startpos += 2
-            #Otherwise do the event will always be 3 bytes long
-            else:
+            #If the event starts with byte 8n, 9n, An, Bn or En then the event will always be 3 bytes long
+            elif format(midifile[startpos], "08b").startswith(("1000", "1001", "1010", "1011", "1110")):
                 temp_events.append(Event(temp_deltatime, midifile[startpos:startpos+3], None))
                 startpos += 3
+            #If the event starts with byte Cn or Dn or anything else then the event will always be 2 bytes long
+            else:
+                temp_events.append(Event(temp_deltatime, midifile[startpos:startpos+2], None))
+                startpos += 2
+
             endpos = startpos + 1
 
             print(f"{temp_events[-1].getDeltaTime()}\t{temp_events[-1].getEvent()}\t{temp_events[-1].getData()}")
@@ -146,8 +143,3 @@ if __name__ == "__main__":
     print(tracks)
     for element in tracks:
         print(element.getEvents())
-    
-
-#TO DO
-#Change track metadata to track data and store the events assciated to the tracks in the class
-#Allow for multiple tracks
