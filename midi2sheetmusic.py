@@ -1,8 +1,17 @@
 #Import external libraries
 import os
-import sys
 
 class MIDI_Metadata:
+    """
+    Stores the metadata of the midifile (first 14 bytes) ensuring that each attribute is the correct length of bytes.
+
+    Attributes:
+        midi_header (bytes)         Shows that the file is a MIDI file - should always be 4D 54 68 64 (MThd).
+        midi_header_length (bytes)  Shows the length of the midi header (referring to the length of midi_format, num_tracks and time_division) - should always be 00 00 00 06 (6).
+        midi_format (bytes)         Shows if the MIDI file has one or more tracks if they are simultaneous or sequentially independent.
+        num_tracks (bytes)          Shows how many tracks are in the MIDI file - will be 00 01 (1) is the midi_format is 00 00 (0).
+        time_division (bytes)       Shows if the MIDI file uses metrical time or time-code-based time to either determine the no. of beats per crotchet or per frame.
+    """
     def __init__(self, midi_header: bytes, midi_header_length: bytes, midi_format: bytes, num_tracks: bytes, time_division: bytes):
         self.midi_header = self.midi_header_length = self.midi_format = self.num_tracks = self.time_division = None
         if len(midi_header) == 4:
@@ -34,6 +43,14 @@ class MIDI_Metadata:
         return self.time_division
 
 class Track:
+    """
+    Stores each track of the midifile ensuring that the metadata is the correct length of bytes.
+
+    Attributes:
+        track_header (bytes)        Shows the beginning of a new track - should always be 4D 54 72 6B (MTrk).
+        track_header_length (bytes) Shows the length of all the events in the track (WILL NOT INCLUDE THE END OF TRACK EVENT FF 2F 00).
+        events (list)               Stores a list of all the events in the track as __main__.Event objects.
+    """
     def __init__(self, track_header: bytes, track_header_length: bytes, events: list):
         self.track_header = self.track_header_length = None
         self.events = events
@@ -54,6 +71,15 @@ class Track:
         return self.events
     
 class Event:
+    """
+    Stores each event by splitting it into its deltatime, event and data.
+
+    Attributes:
+        delta_time (bytes)  Stores the amount of time before the next event 
+        event (bytes)       Stores the action to be performed - list of possible events can be found here:
+                            https://www.mobilefish.com/tutorials/midi/midi_quickguide_specification.html#:~:text=u3-,Event,-byte%20range%3A%20variable
+        data (bytes)        Some events require extra data outside of the initial action which is stored here.
+    """
     def __init__(self, delta_time: bytes, event: bytes, data: bytes):
         self.delta_time = delta_time
         self.event = event
@@ -72,7 +98,7 @@ class StructureException(Exception):
     def __init__(self, message):
         super().__init__(message)
 
-#Reads an inputted midi file
+#Reads an inputted MIDI file
 def import_MIDI(filename):
     #Input sanitation
     if len(filename) == 0:
@@ -81,18 +107,17 @@ def import_MIDI(filename):
         return "Error: File entered does not exist"
     elif not filename.endswith((".mid", ".midi")):
         return "Error: File entered is not a midi file"
-    #Read inputted midi file
+    #Read inputted MIDI file
     with open(filename, "rb") as file:
         return file.read()
 
-if __name__ == "__main__":
-    #Store inputted midi file
-    input_file = input("Enter the midi file name: ")
-    midifile = import_MIDI(input_file)
+#Takes the inputted midifile and transplants it into the class structure
+def instantiate_MIDI(midifile):
+    #Extract the metadata from the MIDI file
     mmetadata = MIDI_Metadata(midifile[0:4], midifile[4:8], midifile[8:10], midifile[10:12], midifile[12:14])
+    global tracks
     startpos = 14
     endpos = 15
-    tracks = []
     #SYSTEM EXCULSIVE EVENTS AND SOME META EVENTS ARE NOT ACCOUNTED FOR
     for i in range(int.from_bytes(mmetadata.getNumTracks())):
         temp_track_header = midifile[startpos:startpos+4]
@@ -139,6 +164,13 @@ if __name__ == "__main__":
             print(f"{temp_events[-1].getDeltaTime()}\t{temp_events[-1].getEvent()}\t{temp_events[-1].getData()}")
 
         tracks.append(Track(temp_track_header, temp_track_header_length, temp_events))
+
+if __name__ == "__main__":
+    #Store inputted midi file
+    input_file = input("Enter the midi file name: ")
+    midifile = import_MIDI(input_file)
+    tracks = []
+    instantiate_MIDI(midifile)
     
     print(tracks)
     for element in tracks:
