@@ -1,5 +1,22 @@
 #Import external libraries
 import os
+import sys
+sys.path.append("libs")
+#Replace os.system with subprocess: https://docs.python.org/3/library/subprocess.html#subprocess-replacements
+#Check if lilypond exists instead of trying to import it
+try:
+    import lilypond
+except ModuleNotFoundError:
+    install = input("""Lilypond is required to run this program.
+If you want to continue please type 'yes' and lilypond will be installed locally to your computer so that it can be easily removed later if you wish.
+Typing anything else will close the program and not install lilypond.
+> """).lower()
+    if install == "yes" or install == "y":
+        os.system("pip install lilypond --target=libs")
+        #Kill program before restarting
+        os.system("python midi2sheetmusic.py")
+    sys.exit()
+
 
 class MIDI_Metadata:
     """
@@ -165,6 +182,18 @@ def instantiate_MIDI(midifile):
 
         tracks.append(Track(temp_track_header, temp_track_header_length, temp_events))
 
+def export_MIDI(lyfile):
+    file_format = input("Would you like to export as a pdf, png or svg? ").lower()
+    if file_format == "pdf":
+        file_format = "--pdf"
+    elif file_format == "png":
+        file_format = "--png"
+    elif file_format == "svg":
+        file_format = "--svg"
+    else:
+        print("That is not a vaild file format!")
+    os.system(f'"{os.path.dirname(__file__)}\\libs\\lilypond-binaries\\bin\\lilypond" {file_format} {lyfile}')
+
 if __name__ == "__main__":
     #Store inputted midi file
     input_file = input("Enter the midi file name: ")
@@ -175,3 +204,5 @@ if __name__ == "__main__":
     print(tracks)
     for element in tracks:
         print(element.getEvents())
+
+    export_MIDI("APBirdland.ly")
