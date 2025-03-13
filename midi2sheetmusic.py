@@ -1,22 +1,17 @@
 #Import external libraries
 import os
 import sys
-sys.path.append("libs")
-#Replace os.system with subprocess: https://docs.python.org/3/library/subprocess.html#subprocess-replacements
-#Check if lilypond exists instead of trying to import it
-try:
-    import lilypond
-except ModuleNotFoundError:
-    install = input("""Lilypond is required to run this program.
+import subprocess
+#If LilyPond doesn't exist locally then try to install it locally
+if not os.path.exists(f"libs\\lilypond-binaries\\bin\\lilypond.exe"):
+    install = input("""Lilypond is required to be locally installed to run this program.
 If you want to continue please type 'yes' and lilypond will be installed locally to your computer so that it can be easily removed later if you wish.
 Typing anything else will close the program and not install lilypond.
 > """).lower()
     if install == "yes" or install == "y":
-        os.system("pip install lilypond --target=libs")
-        #Kill program before restarting
-        os.system("python midi2sheetmusic.py")
+        subprocess.call("pip install lilypond --target=libs")
+        subprocess.call("python midi2sheetmusic.py")
     sys.exit()
-
 
 class MIDI_Metadata:
     """
@@ -182,7 +177,9 @@ def instantiate_MIDI(midifile):
 
         tracks.append(Track(temp_track_header, temp_track_header_length, temp_events))
 
+#Takes a LilyPond file as an input and runs it through the LilyPond parser
 def export_MIDI(lyfile):
+    #Ask the user for what file format the exported file should be
     file_format = input("Would you like to export as a pdf, png or svg? ").lower()
     if file_format == "pdf":
         file_format = "--pdf"
@@ -192,7 +189,8 @@ def export_MIDI(lyfile):
         file_format = "--svg"
     else:
         print("That is not a vaild file format!")
-    os.system(f'"{os.path.dirname(__file__)}\\libs\\lilypond-binaries\\bin\\lilypond" {file_format} {lyfile}')
+    #Run the LilyPond parser
+    subprocess.call(f'"libs\\lilypond-binaries\\bin\\lilypond" {file_format} {lyfile}')
 
 if __name__ == "__main__":
     #Store inputted midi file
