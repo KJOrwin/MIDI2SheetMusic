@@ -2,8 +2,14 @@
 import os
 import sys
 import subprocess
+import tkinter as tk
+import tkinter.messagebox as tkmb
+from tkinter import filedialog
 #If LilyPond doesn't exist locally then try to install it locally
 if not os.path.exists(f"libs\\lilypond-binaries\\bin\\lilypond.exe"):
+    import_warning = tkmb.askokcancel(title="MIDI2SheetMusic", message="Lilypond is required to be locally installed to run this program.\nIf you want to continue click 'OK' and lilypond will be installed locally to your computer so that it can be easily removed later if you wish.\nClicking 'Cancel' will close the program and not install lilypond.")
+    if not import_warning:
+        sys.exit()
     install = input("""Lilypond is required to be locally installed to run this program.
 If you want to continue please type 'yes' and lilypond will be installed locally to your computer so that it can be easily removed later if you wish.
 Typing anything else will close the program and not install lilypond.
@@ -110,6 +116,10 @@ class StructureException(Exception):
     def __init__(self, message):
         super().__init__(message)
 
+root = tk.Tk()
+root.title("MIDI2SheetMusic")
+root.resizable(False, False)
+
 #Reads an inputted MIDI file
 def import_MIDI(filename):
     #Input sanitation
@@ -192,7 +202,40 @@ def export_MIDI(lyfile):
     #Run the LilyPond parser
     subprocess.call(f'"libs\\lilypond-binaries\\bin\\lilypond" {file_format} {lyfile}')
 
+def browse_files():
+    global path_entry_variable
+    filename = filedialog.askopenfilename(initialdir=".", title="Select a file", filetypes=(("Midi files (*mid *midi)", "*.mid *.midi"),))
+    path_entry_variable.set(filename)
+
+def test_export(midifile):
+    global tracks
+    midifile = import_MIDI(midifile)
+    tracks = []
+    instantiate_MIDI(midifile)
+    
+    print(tracks)
+    for element in tracks:
+        print(element.getEvents())
+
+#root widgets
+
+title = tk.Label(root, text="MIDI2SheetMusic")
+title.grid(row=1, column=1, columnspan=2)
+
+path_entry_variable = tk.StringVar()
+path_entry = tk.Entry(root, textvariable=path_entry_variable, state="readonly")
+path_entry.grid(row=2, column=1)
+browse_button = tk.Button(root, text="Browse", command=browse_files)
+browse_button.grid(row=2, column=2)
+
+export_button = tk.Button(root, text="Export", command=lambda: test_export(path_entry_variable.get()))
+export_button.grid(row=3, column=1, columnspan=2)
+
+#------------
+
 if __name__ == "__main__":
+    root.mainloop()
+
     #Store inputted midi file
     input_file = input("Enter the midi file name: ")
     midifile = import_MIDI(input_file)
