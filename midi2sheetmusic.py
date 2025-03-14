@@ -5,19 +5,19 @@ import subprocess
 import tkinter as tk
 import tkinter.messagebox as tkmb
 from tkinter import filedialog
+
+#Installs LilyPond locally
+def install_LilyPond():
+    subprocess.call("pip install lilypond --target=libs")
+    subprocess.call("python midi2sheetmusic.py")
+    sys.exit()
+
 #If LilyPond doesn't exist locally then try to install it locally
 if not os.path.exists(f"libs\\lilypond-binaries\\bin\\lilypond.exe"):
-    import_warning = tkmb.askokcancel(title="MIDI2SheetMusic", message="Lilypond is required to be locally installed to run this program.\nIf you want to continue click 'OK' and lilypond will be installed locally to your computer so that it can be easily removed later if you wish.\nClicking 'Cancel' will close the program and not install lilypond.")
+    import_warning = tkmb.askokcancel(title="MIDI2SheetMusic", icon="error", message="Lilypond is required to be locally installed to run this program.\n\nIf you want to continue click 'OK' and lilypond will be installed locally to your computer so that it can be easily removed later if you wish.\n\nClicking 'Cancel' will close the program and not install lilypond.")
     if not import_warning:
         sys.exit()
-    install = input("""Lilypond is required to be locally installed to run this program.
-If you want to continue please type 'yes' and lilypond will be installed locally to your computer so that it can be easily removed later if you wish.
-Typing anything else will close the program and not install lilypond.
-> """).lower()
-    if install == "yes" or install == "y":
-        subprocess.call("pip install lilypond --target=libs")
-        subprocess.call("python midi2sheetmusic.py")
-    sys.exit()
+    install_LilyPond()
 
 class MIDI_Metadata:
     """
@@ -217,19 +217,35 @@ def test_export(midifile):
     for element in tracks:
         print(element.getEvents())
 
+def install_command():
+    if os.path.exists(f"libs\\lilypond-binaries\\bin\\lilypond.exe"):
+        uninstall_warning = tkmb.askokcancel(title="MIDI2SheetMusic", icon="warning", message="Are you sure you want to uninstall LilyPond.\n\nIf you do this, you won't be able to use this program until you reinstall it.\n\nDo you wish to proceed?")
+        if uninstall_warning:
+            os.remove("libs")
+            install_button.config(text="Install LilyPond", bg="red")
+        install_button.config(text="Uninstall LilyPond", bg="SystemButtonFace")
+    elif not os.path.exists(f"libs\\lilypond-binaries\\bin\\lilypond.exe"):
+        install_warning = tkmb.askokcancel(title="MIDI2SheetMusic", icon="question", message="Lilypond is required to be locally installed to run this program.\n\nIf you want to continue click 'OK' and lilypond will be installed locally to your computer so that it can be easily removed later if you wish.\n\nClicking 'Cancel' will not install lilypond.")
+        if install_warning:
+            install_LilyPond()
+            install_button.config(text="Uninstall LilyPond", bg="SystemButtonFace")
+        install_button.config(text="Install LilyPond", bg="red")
+
 #root widgets
 
-title = tk.Label(root, text="MIDI2SheetMusic")
-title.grid(row=1, column=1, columnspan=2)
+title = tk.Label(root, text="MIDI2SheetMusic", font=("TkDefaultFont", 12, "bold"))
+title.grid(row=1, column=1, columnspan=2, pady=(10, 5))
 
 path_entry_variable = tk.StringVar()
 path_entry = tk.Entry(root, textvariable=path_entry_variable, state="readonly")
-path_entry.grid(row=2, column=1)
+path_entry.grid(row=2, column=1, padx=(10, 5), pady=(5, 5))
 browse_button = tk.Button(root, text="Browse", command=browse_files)
-browse_button.grid(row=2, column=2)
+browse_button.grid(row=2, column=2, padx=(5, 10), pady=(5, 5))
 
+install_button = tk.Button(root, text="Uninstall LilyPond", command=install_command)
+install_button.grid(row=3, column=1, padx=(10, 5), pady=(5, 10))
 export_button = tk.Button(root, text="Export", command=lambda: test_export(path_entry_variable.get()))
-export_button.grid(row=3, column=1, columnspan=2)
+export_button.grid(row=3, column=2, padx=(5, 10), pady=(5, 10))
 
 #------------
 
