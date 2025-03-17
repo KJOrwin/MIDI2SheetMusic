@@ -6,18 +6,14 @@ import tkinter as tk
 import tkinter.messagebox as tkmb
 from tkinter import filedialog
 
-#Installs LilyPond locally
-def install_LilyPond():
-    subprocess.call("pip install lilypond --target=libs")
-    subprocess.call("python midi2sheetmusic.py")
-    sys.exit()
-
 #If LilyPond doesn't exist locally then try to install it locally
 if not os.path.exists(f"libs\\lilypond-binaries\\bin\\lilypond.exe"):
     import_warning = tkmb.askokcancel(title="MIDI2SheetMusic", icon="error", message="Lilypond is required to be locally installed to run this program.\n\nIf you want to continue click 'OK' and lilypond will be installed locally to your computer so that it can be easily removed later if you wish.\n\nClicking 'Cancel' will close the program and not install lilypond.")
     if not import_warning:
         sys.exit()
-    install_LilyPond()
+    subprocess.call("pip install lilypond --target=libs")
+    subprocess.call("python midi2sheetmusic.py")
+    sys.exit()
 
 class MIDI_Metadata:
     """
@@ -119,6 +115,7 @@ class StructureException(Exception):
 root = tk.Tk()
 root.title("MIDI2SheetMusic")
 root.resizable(False, False)
+root.iconbitmap("midi2sheetmusic icon.ico")
 
 #Reads an inputted MIDI file
 def import_MIDI(filename):
@@ -202,10 +199,15 @@ def export_MIDI(lyfile):
     #Run the LilyPond parser
     subprocess.call(f'"libs\\lilypond-binaries\\bin\\lilypond" {file_format} {lyfile}')
 
-def browse_files():
-    global path_entry_variable
-    filename = filedialog.askopenfilename(initialdir=".", title="Select a file", filetypes=(("Midi files (*mid *midi)", "*.mid *.midi"),))
-    path_entry_variable.set(filename)
+def browse_files(file_entry, type, dir_entry=None):
+    if type == "file":
+        path = filedialog.askopenfilename(initialdir=".", title="Select a file", filetypes=(("Midi files", "*.mid *.midi"),))
+    elif type == "directory":
+        path = filedialog.askdirectory(initialdir=".", title="Select a folder")    
+    if path:
+        file_entry.set(path)
+        if dir_entry and not dir_entry.get():
+            dir_entry.set(os.path.dirname(path))
 
 def test_export(midifile):
     global tracks
@@ -217,35 +219,29 @@ def test_export(midifile):
     for element in tracks:
         print(element.getEvents())
 
-def install_command():
-    if os.path.exists(f"libs\\lilypond-binaries\\bin\\lilypond.exe"):
-        uninstall_warning = tkmb.askokcancel(title="MIDI2SheetMusic", icon="warning", message="Are you sure you want to uninstall LilyPond.\n\nIf you do this, you won't be able to use this program until you reinstall it.\n\nDo you wish to proceed?")
-        if uninstall_warning:
-            os.remove("libs")
-            install_button.config(text="Install LilyPond", bg="red")
-        install_button.config(text="Uninstall LilyPond", bg="SystemButtonFace")
-    elif not os.path.exists(f"libs\\lilypond-binaries\\bin\\lilypond.exe"):
-        install_warning = tkmb.askokcancel(title="MIDI2SheetMusic", icon="question", message="Lilypond is required to be locally installed to run this program.\n\nIf you want to continue click 'OK' and lilypond will be installed locally to your computer so that it can be easily removed later if you wish.\n\nClicking 'Cancel' will not install lilypond.")
-        if install_warning:
-            install_LilyPond()
-            install_button.config(text="Uninstall LilyPond", bg="SystemButtonFace")
-        install_button.config(text="Install LilyPond", bg="red")
-
 #root widgets
 
 title = tk.Label(root, text="MIDI2SheetMusic", font=("TkDefaultFont", 12, "bold"))
-title.grid(row=1, column=1, columnspan=2, pady=(10, 5))
+title.grid(row=1, column=1, columnspan=3, pady=(10, 5))
 
-path_entry_variable = tk.StringVar()
-path_entry = tk.Entry(root, textvariable=path_entry_variable, state="readonly")
-path_entry.grid(row=2, column=1, padx=(10, 5), pady=(5, 5))
-browse_button = tk.Button(root, text="Browse", command=browse_files)
-browse_button.grid(row=2, column=2, padx=(5, 10), pady=(5, 5))
+file_label = tk.Label(root, text="File:")
+file_label.grid(row=2, column=1, padx=(10, 5), pady=(5, 5))
+file_entry_var = tk.StringVar()
+file_entry = tk.Entry(root, textvariable=file_entry_var, width=50, state="readonly")
+file_entry.grid(row=2, column=2, padx=(5, 5), pady=(5, 5))
+file_browse = tk.Button(root, text="Browse", command=lambda: browse_files(file_entry_var, "file", destn_entry_var))
+file_browse.grid(row=2, column=3, padx=(5, 10), pady=(5, 5))
 
-install_button = tk.Button(root, text="Uninstall LilyPond", command=install_command)
-install_button.grid(row=3, column=1, padx=(10, 5), pady=(5, 10))
-export_button = tk.Button(root, text="Export", command=lambda: test_export(path_entry_variable.get()))
-export_button.grid(row=3, column=2, padx=(5, 10), pady=(5, 10))
+destn_label = tk.Label(root, text="Destination:")
+destn_label.grid(row=3, column=1, padx=(10, 5), pady=(5, 5))
+destn_entry_var = tk.StringVar()
+destn_entry = tk.Entry(root, textvariable=destn_entry_var, width=50, state="readonly")
+destn_entry.grid(row=3, column=2, padx=(5, 5), pady=(5, 5))
+destn_browse = tk.Button(root, text="Browse", command=lambda: browse_files(destn_entry_var, "directory"))
+destn_browse.grid(row=3, column=3, padx=(5, 10), pady=(5, 5))
+
+export_button = tk.Button(root, text="Export", command=lambda: test_export(file_entry_var.get()))
+export_button.grid(row=4, column=1, columnspan=3, padx=(5, 10), pady=(5, 10))
 
 #------------
 
