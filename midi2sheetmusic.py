@@ -2,8 +2,10 @@
 import os
 import sys
 import subprocess
+import json
 import tkinter as tk
 import tkinter.messagebox as tkmb
+from tkinter import ttk
 from tkinter import filedialog
 
 #If LilyPond doesn't exist locally then try to install it locally
@@ -132,6 +134,7 @@ def import_MIDI(filename):
 
 #Takes the inputted midifile and transplants it into the class structure
 def instantiate_MIDI(midifile):
+    json_list = []
     #Extract the metadata from the MIDI file
     mmetadata = MIDI_Metadata(midifile[0:4], midifile[4:8], midifile[8:10], midifile[10:12], midifile[12:14])
     global tracks
@@ -179,10 +182,13 @@ def instantiate_MIDI(midifile):
                 startpos += 2
 
             endpos = startpos + 1
-
+            
+            json_list.append({"delta_time": str(temp_events[-1].getDeltaTime()), "event": str(temp_events[-1].getEvent()), "data": str(temp_events[-1].getData())})
             print(f"{temp_events[-1].getDeltaTime()}\t{temp_events[-1].getEvent()}\t{temp_events[-1].getData()}")
 
         tracks.append(Track(temp_track_header, temp_track_header_length, temp_events))
+        with open(f"{os.path.splitext(os.path.basename(file_entry_var.get()))[0]}.json", "w", encoding="utf-8") as f:
+            json.dump(json_list, f, ensure_ascii=False, indent=4)
 
 #Takes a LilyPond file as an input and runs it through the LilyPond parser
 def export_MIDI(lyfile):
@@ -209,7 +215,7 @@ def browse_files(file_entry, type, dir_entry=None):
         if dir_entry and not dir_entry.get():
             dir_entry.set(os.path.dirname(path))
 
-def test_export(midifile):
+def export(midifile):
     global tracks
     midifile = import_MIDI(midifile)
     tracks = []
@@ -225,7 +231,7 @@ title = tk.Label(root, text="MIDI2SheetMusic", font=("TkDefaultFont", 12, "bold"
 title.grid(row=1, column=1, columnspan=3, pady=(10, 5))
 
 file_label = tk.Label(root, text="File:")
-file_label.grid(row=2, column=1, padx=(10, 5), pady=(5, 5))
+file_label.grid(row=2, column=1, padx=(10, 5), pady=(5, 5), sticky="E")
 file_entry_var = tk.StringVar()
 file_entry = tk.Entry(root, textvariable=file_entry_var, width=50, state="readonly")
 file_entry.grid(row=2, column=2, padx=(5, 5), pady=(5, 5))
@@ -233,15 +239,21 @@ file_browse = tk.Button(root, text="Browse", command=lambda: browse_files(file_e
 file_browse.grid(row=2, column=3, padx=(5, 10), pady=(5, 5))
 
 destn_label = tk.Label(root, text="Destination:")
-destn_label.grid(row=3, column=1, padx=(10, 5), pady=(5, 5))
+destn_label.grid(row=3, column=1, padx=(10, 5), pady=(5, 5), sticky="E")
 destn_entry_var = tk.StringVar()
 destn_entry = tk.Entry(root, textvariable=destn_entry_var, width=50, state="readonly")
 destn_entry.grid(row=3, column=2, padx=(5, 5), pady=(5, 5))
 destn_browse = tk.Button(root, text="Browse", command=lambda: browse_files(destn_entry_var, "directory"))
 destn_browse.grid(row=3, column=3, padx=(5, 10), pady=(5, 5))
 
-export_button = tk.Button(root, text="Export", command=lambda: test_export(file_entry_var.get()))
-export_button.grid(row=4, column=1, columnspan=3, padx=(5, 10), pady=(5, 10))
+format_label = tk.Label(root, text="File Format:")
+format_label.grid(row=4, column=1, padx=(10, 5), pady=(5, 5), sticky="E")
+format_cb_var = tk.StringVar()
+format_cb = ttk.Combobox(root, textvariable=format_cb_var, values=["pdf", "png", "svg"], state="readonly")
+format_cb.grid(row=4, column=2, padx=(5, 10), pady=(5, 5), sticky="W")
+
+export_button = tk.Button(root, text="Export", command=lambda: export(file_entry_var.get()))
+export_button.grid(row=5, column=1, columnspan=3, padx=(5, 10), pady=(5, 10))
 
 #------------
 
