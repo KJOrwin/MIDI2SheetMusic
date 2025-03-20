@@ -3,10 +3,10 @@ import os
 import sys
 import subprocess
 import json
+import ctypes
 import tkinter as tk
 import tkinter.messagebox as tkmb
-from tkinter import ttk
-from tkinter import filedialog
+from tkinter import ttk, filedialog
 
 #If LilyPond doesn't exist locally then try to install it locally
 if not os.path.exists(f"libs\\lilypond-binaries\\bin\\lilypond.exe"):
@@ -43,6 +43,7 @@ class MIDI_Metadata:
         if not (self.midi_header and self.midi_header_length and self.midi_format and self.num_tracks and self.time_division):
             raise StructureException("Invaild Input")
 
+    #MIDI_Metadata get methods
     def getMIDIHeader(self):
         return self.midi_header
 
@@ -77,6 +78,7 @@ class Track:
         if not (self.track_header and self.track_header_length):
             raise StructureException("Invaild Input")
     
+    #Track get methods
     def getTrackHeader(self):
         return self.track_header
 
@@ -101,6 +103,7 @@ class Event:
         self.event = event
         self.data = data
     
+    #Event get methods
     def getDeltaTime(self):
         return self.delta_time
     
@@ -110,13 +113,16 @@ class Event:
     def getData(self):
         return self.data
 
+#Custom exception. Only triggered if the class structure fails due to incorrect file input or length of events.
 class StructureException(Exception):
     def __init__(self, message):
         super().__init__(message)
 
+#Creates a tkinter window with a title, icon and stops it from being resized by the user.
 root = tk.Tk()
 root.title("MIDI2SheetMusic")
 root.resizable(False, False)
+ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("midi2sheetmusic")
 root.iconbitmap("midi2sheetmusic icon.ico")
 
 #Reads an inputted MIDI file
@@ -141,6 +147,7 @@ def instantiate_MIDI(midifile):
     startpos = 14
     endpos = 15
     #SYSTEM EXCULSIVE EVENTS AND SOME META EVENTS ARE NOT ACCOUNTED FOR
+    #Repeat the process for all the tracks in the MIDI file
     for i in range(int.from_bytes(mmetadata.getNumTracks())):
         temp_track_header = midifile[startpos:startpos+4]
         temp_track_header_length = midifile[startpos+4:startpos+8]
@@ -183,12 +190,17 @@ def instantiate_MIDI(midifile):
 
             endpos = startpos + 1
             
+            #Append each event to a list for json exporting
             json_list.append({"delta_time": str(temp_events[-1].getDeltaTime()), "event": str(temp_events[-1].getEvent()), "data": str(temp_events[-1].getData())})
-            print(f"{temp_events[-1].getDeltaTime()}\t{temp_events[-1].getEvent()}\t{temp_events[-1].getData()}")
+            #print(f"{temp_events[-1].getDeltaTime()}\t{temp_events[-1].getEvent()}\t{temp_events[-1].getData()}")
 
+        #Append the track to a list with all of its events 
         tracks.append(Track(temp_track_header, temp_track_header_length, temp_events))
-        with open(f"{os.path.splitext(os.path.basename(file_entry_var.get()))[0]}.json", "w", encoding="utf-8") as f:
-            json.dump(json_list, f, ensure_ascii=False, indent=4)
+    
+    #Create the json file with all the events
+    with open(f"{os.path.splitext(os.path.basename(file_entry_var.get()))[0]}.json", "w", encoding="utf-8") as f:
+        json.dump(json_list, f, ensure_ascii=False, indent=4)
+    print("Done")
 
 #Takes a LilyPond file as an input and runs it through the LilyPond parser
 def export_MIDI(lyfile):
@@ -202,28 +214,37 @@ def export_MIDI(lyfile):
         file_format = "--svg"
     else:
         print("That is not a vaild file format!")
+        return
     #Run the LilyPond parser
     subprocess.call(f'"libs\\lilypond-binaries\\bin\\lilypond" {file_format} {lyfile}')
 
+#Used by the tkinter browse button to open a filedialog box (file explorer) and ask the user to find the correct file/directory
 def browse_files(file_entry, type, dir_entry=None):
+    #Check if the user input should be a file or a directory
     if type == "file":
         path = filedialog.askopenfilename(initialdir=".", title="Select a file", filetypes=(("Midi files", "*.mid *.midi"),))
     elif type == "directory":
         path = filedialog.askdirectory(initialdir=".", title="Select a folder")    
+    #Check if something was inputted in the filedialog box
+    #Without this, if the user didn't input anything the path would be cleared.
     if path:
         file_entry.set(path)
         if dir_entry and not dir_entry.get():
             dir_entry.set(os.path.dirname(path))
 
+#Main function to export the MIDI file
 def export(midifile):
     global tracks
+    #Get the bytes from the midifile
     midifile = import_MIDI(midifile)
     tracks = []
+    #Insert the bytes into the class structure
     instantiate_MIDI(midifile)
     
-    print(tracks)
-    for element in tracks:
-        print(element.getEvents())
+    #Output the track objects and event objects
+    #print(tracks)
+    #for element in tracks:
+    #    print(element.getEvents())
 
 #root widgets
 
@@ -253,21 +274,11 @@ format_cb = ttk.Combobox(root, textvariable=format_cb_var, values=["pdf", "png",
 format_cb.grid(row=4, column=2, padx=(5, 10), pady=(5, 5), sticky="W")
 
 export_button = tk.Button(root, text="Export", command=lambda: export(file_entry_var.get()))
-export_button.grid(row=5, column=1, columnspan=3, padx=(5, 10), pady=(5, 10))
+export_button.grid(row=5, column=1, columnspan=2, padx=(10, 5), pady=(5, 10))
+test_ly2sm = tk.Button(root, text="ly2sm", command=lambda: export_MIDI("APBirdland.ly"))
+test_ly2sm.grid(row=5, column=3, padx=(5, 10), pady=(5, 10))
 
 #------------
 
-if __name__ == "__main__":
-    root.mainloop()
-
-    #Store inputted midi file
-    input_file = input("Enter the midi file name: ")
-    midifile = import_MIDI(input_file)
-    tracks = []
-    instantiate_MIDI(midifile)
-    
-    print(tracks)
-    for element in tracks:
-        print(element.getEvents())
-
-    export_MIDI("APBirdland.ly")
+#Tkinter main loop
+root.mainloop()
