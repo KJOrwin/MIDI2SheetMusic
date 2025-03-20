@@ -275,7 +275,7 @@ format_cb.grid(row=4, column=2, padx=(5, 10), pady=(5, 5), sticky="W")
 
 export_button = tk.Button(root, text="Export", command=lambda: export(file_entry_var.get()))
 export_button.grid(row=5, column=1, columnspan=2, padx=(10, 5), pady=(5, 10))
-test_ly2sm = tk.Button(root, text="ly2sm", command=lambda: export_MIDI("APBirdland.ly"))
+test_ly2sm = tk.Button(root, text="ly2sm", command=lambda: export_MIDI("examples/APBirdland.ly"))
 test_ly2sm.grid(row=5, column=3, padx=(5, 10), pady=(5, 10))
 
 #------------
